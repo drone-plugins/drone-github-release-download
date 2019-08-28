@@ -93,7 +93,7 @@ def linux(arch):
           'CGO_ENABLED': '0'
         },
         'commands': [
-          'go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/linux/%s/drone-ansible' % arch
+          'go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/linux/%s/drone-github-release-download' % arch
         ],
         'when': {
           'event': {
@@ -111,7 +111,7 @@ def linux(arch):
           'CGO_ENABLED': '0'
         },
         'commands': [
-          'go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/linux/%s/drone-ansible' % arch
+          'go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/linux/%s/drone-github-release-download' % arch
         ],
         'when': {
           'event': [
@@ -124,7 +124,7 @@ def linux(arch):
         'image': 'golang:1.12',
         'pull': 'always',
         'commands': [
-          './release/linux/%s/drone-ansible --help' % arch
+          './release/linux/%s/drone-github-release-download --help' % arch
         ]
       },
       {
@@ -135,7 +135,7 @@ def linux(arch):
           'dry_run': True,
           'tags': 'linux-%s' % arch,
           'dockerfile': 'docker/Dockerfile.linux.%s' % arch,
-          'repo': 'plugins/ansible',
+          'repo': 'plugins/github-release-download',
           'username': {
             'from_secret': 'docker_username'
           },
@@ -157,7 +157,7 @@ def linux(arch):
           'auto_tag': True,
           'auto_tag_suffix': 'linux-%s' % arch,
           'dockerfile': 'docker/Dockerfile.linux.%s' % arch,
-          'repo': 'plugins/ansible',
+          'repo': 'plugins/github-release-download',
           'username': {
             'from_secret': 'docker_username'
           },
@@ -210,7 +210,7 @@ def windows(version):
           'CGO_ENABLED': '0'
         },
         'commands': [
-          'go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/windows/amd64/drone-ansible.exe',
+          'go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe',
         ],
         'when': {
           'event': {
@@ -226,7 +226,7 @@ def windows(version):
           'CGO_ENABLED': '0'
         },
         'commands': [
-          'go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/windows/amd64/drone-ansible.exe',
+          'go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe',
         ],
         'when': {
           'event':  [
@@ -237,7 +237,7 @@ def windows(version):
       {
         'name': 'executable',
         'commands': [
-          './release/windows/amd64/drone-ansible.exe --help',
+          './release/windows/amd64/drone-github-release-download.exe --help',
         ]
       },
       {
@@ -252,9 +252,9 @@ def windows(version):
         },
         'commands': [
           'echo $env:PASSWORD | docker login --username $env:USERNAME --password-stdin',
-          'docker build --pull -f docker/Dockerfile.windows.%s -t plugins/ansible:windows-%s-amd64 .' % (version, version),
-          'docker run --rm plugins/ansible:windows-%s-amd64 --help' % version,
-          'docker push plugins/ansible:windows-%s-amd64' % version,
+          'docker build --pull -f docker/Dockerfile.windows.%s -t plugins/github-release-download:windows-%s-amd64 .' % (version, version),
+          'docker run --rm plugins/github-release-download:windows-%s-amd64 --help' % version,
+          'docker push plugins/github-release-download:windows-%s-amd64' % version,
         ],
         'when': {
           'ref': [
@@ -274,9 +274,9 @@ def windows(version):
         },
         'commands': [
           'echo $env:PASSWORD | docker login --username $env:USERNAME --password-stdin',
-          'docker build --pull -f docker/Dockerfile.windows.%s -t plugins/ansible:${DRONE_TAG##v}-windows-%s-amd64 .' % (version, version),
-          'docker run --rm plugins/ansible:${DRONE_TAG##v}-windows-%s-amd64 --help' % version,
-          'docker push plugins/ansible:${DRONE_TAG##v}-windows-%s-amd64' % version,
+          'docker build --pull -f docker/Dockerfile.windows.%s -t plugins/github-release-download:${DRONE_TAG##v}-windows-%s-amd64 .' % (version, version),
+          'docker run --rm plugins/github-release-download:${DRONE_TAG##v}-windows-%s-amd64 --help' % version,
+          'docker push plugins/github-release-download:${DRONE_TAG##v}-windows-%s-amd64' % version,
         ],
         'when': {
           'ref': [
