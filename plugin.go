@@ -220,6 +220,8 @@ func (p Plugin) Exec() error {
 			return fmt.Errorf("Error while downloading %s", err)
 		}
 
+		// DownloadReleaseAsset either returns a io.ReadCloser or a redirect URL
+		// if there is no error so it can be assumed that we have a URL
 		if rc == nil {
 			resp, err := http.Get(redirectURL)
 
