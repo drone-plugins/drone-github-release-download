@@ -63,6 +63,9 @@ func (p Plugin) Exec() error {
 		return fmt.Errorf("Failed to parse GitHub URL. %s", err)
 	}
 
+	// Remove the path in the case that DRONE_REPO_LINK was passed in
+	githubURL.Path = ""
+
 	// Create the client
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: p.Config.APIKey})

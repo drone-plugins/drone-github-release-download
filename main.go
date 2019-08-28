@@ -35,9 +35,8 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "github-url",
-			Value:  "https://github.com/",
-			Usage:  "github url, needs to be changed for ghe",
-			EnvVar: "PLUGIN_GITHUB_URL",
+			Usage:  "github url, defaults to current scm",
+			EnvVar: "PLUGIN_GITHUB_URL,DRONE_REPO_LINK",
 		},
 		cli.StringFlag{
 			Name:   "owner",
