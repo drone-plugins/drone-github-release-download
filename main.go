@@ -13,8 +13,8 @@ var (
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "github-release plugin"
-	app.Usage = "github-release plugin"
+	app.Name = "github-release-download plugin"
+	app.Usage = "github-release-download plugin"
 	app.Action = run
 	app.Version = version
 	app.Flags = []cli.Flag{
