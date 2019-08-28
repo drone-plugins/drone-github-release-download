@@ -82,9 +82,9 @@ func (p Plugin) Exec() error {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"githubURL": githubURL.String(),
-		"baseURL":   client.BaseURL.String(),
-		"uploadURL": client.BaseURL.String(),
+		"github-url": githubURL.String(),
+		"base-url":   client.BaseURL.String(),
+		"upload-url": client.BaseURL.String(),
 	}).Debug("Connecting to GitHub instance")
 
 	// Get the repository
@@ -96,7 +96,7 @@ func (p Plugin) Exec() error {
 
 	logrus.WithFields(logrus.Fields{
 		"fullname": repo.GetFullName(),
-		"htmlURL":  repo.GetHTMLURL(),
+		"html-url": repo.GetHTMLURL(),
 	}).Info("Found repository")
 
 	var release *github.RepositoryRelease
