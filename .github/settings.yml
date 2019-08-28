@@ -1,7 +1,7 @@
 repository:
-  name: drone-github-release
-  description: Drone plugin for creating and tagging GitHub releases
-  homepage: http://plugins.drone.io/drone-plugins/drone-github-release
+  name: drone-github-release-download
+  description: Drone plugin for downloading Github Releases
+  homepage: http://plugins.drone.io/drone-plugins/drone-github-release-download
   topics: drone, drone-plugin
 
   private: false
