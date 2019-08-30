@@ -63,6 +63,12 @@ func (p Plugin) Exec() error {
 		return fmt.Errorf("Failed to parse GitHub URL. %s", err)
 	}
 
+	// Print out proxy information
+	logrus.WithFields(logrus.Fields{
+		"http-proxy": os.Getenv("HTTP_PROXY"),
+		"no-proxy":   os.Getenv("NO_PROXY"),
+	}).Debug("Proxy information")
+
 	// Remove the path in the case that DRONE_REPO_LINK was passed in
 	githubURL.Path = ""
 
