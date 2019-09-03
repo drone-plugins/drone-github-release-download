@@ -36,6 +36,7 @@ def testing():
         'image': 'golang:1.12',
         'pull': 'always',
         'commands': [
+          'go version',
           'go vet ./...'
         ],
         'volumes': [
@@ -50,6 +51,7 @@ def testing():
         'image': 'golang:1.12',
         'pull': 'always',
         'commands': [
+          'go version',
           'go test -cover ./...'
         ],
         'volumes': [
@@ -93,6 +95,7 @@ def linux(arch):
           'CGO_ENABLED': '0'
         },
         'commands': [
+          'go version',
           'go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/linux/%s/drone-github-release-download' % arch
         ],
         'when': {
@@ -111,6 +114,7 @@ def linux(arch):
           'CGO_ENABLED': '0'
         },
         'commands': [
+          'go version',
           'go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/linux/%s/drone-github-release-download' % arch
         ],
         'when': {
@@ -210,6 +214,7 @@ def windows(version):
           'CGO_ENABLED': '0'
         },
         'commands': [
+          'go version',
           'go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe',
         ],
         'when': {
@@ -226,6 +231,7 @@ def windows(version):
           'CGO_ENABLED': '0'
         },
         'commands': [
+          'go version',
           'go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe',
         ],
         'when': {
