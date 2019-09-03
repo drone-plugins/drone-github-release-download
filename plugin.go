@@ -65,8 +65,9 @@ func (p Plugin) Exec() error {
 
 	// Print out proxy information
 	logrus.WithFields(logrus.Fields{
-		"http-proxy": os.Getenv("HTTP_PROXY"),
-		"no-proxy":   os.Getenv("NO_PROXY"),
+		"http-proxy":  os.Getenv("HTTP_PROXY"),
+		"https-proxy": os.Getenv("HTTPS_PROXY"),
+		"no-proxy":    os.Getenv("NO_PROXY"),
 	}).Debug("Proxy information")
 
 	// Remove the path in the case that DRONE_REPO_LINK was passed in
