@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 
 	"os"
@@ -73,8 +74,10 @@ func (p Plugin) Exec() error {
 	// Remove the path in the case that DRONE_REPO_LINK was passed in
 	githubURL.Path = ""
 
+	// Create the context
+	ctx := httptrace.WithClientTrace(context.Background(), trace)
+
 	// Create the client
-	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: p.Config.APIKey})
 	tc := oauth2.NewClient(ctx, ts)
 
