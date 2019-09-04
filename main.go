@@ -94,6 +94,9 @@ func run(c *cli.Context) error {
 	}
 
 	logrus.SetLevel(lvl)
+	logrus.WithFields(logrus.Fields{
+		"log-level": lvl,
+	}).Info("Logging level set to")
 
 	// Execute plugin
 	return plugin.Exec()
