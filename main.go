@@ -59,6 +59,11 @@ func main() {
 			Usage:  "plugin logging level",
 			EnvVar: "PLUGIN_LOG_LEVEL",
 		},
+		cli.BoolFlag{
+			Name:   "skip-verify",
+			Usage:  "skip SSL verification",
+			EnvVar: "PLUGIN_SKIP_VERIFY",
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -79,6 +84,9 @@ func run(c *cli.Context) error {
 			Files:     c.StringSlice("files"),
 			Path:      c.String("path"),
 			GitHubURL: c.String("github-url"),
+		},
+		Transport: Transport{
+			SkipVerify: c.Bool("skip-verify"),
 		},
 	}
 

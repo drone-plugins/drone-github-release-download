@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 
@@ -32,9 +33,14 @@ type (
 		GitHubURL string
 	}
 
+	Transport struct {
+		SkipVerify bool
+	}
+
 	Plugin struct {
-		Repo   Repo
-		Config Config
+		Repo      Repo
+		Config    Config
+		Transport Transport
 	}
 )
 
@@ -70,6 +76,12 @@ func (p Plugin) Exec() error {
 		"https-proxy": os.Getenv("HTTPS_PROXY"),
 		"no-proxy":    os.Getenv("NO_PROXY"),
 	}).Debug("Proxy information")
+
+	// Set default client options
+	if p.Transport.SkipVerify {
+		logrus.Warning("SSL verification is disabled")
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
 
 	// Remove the path in the case that DRONE_REPO_LINK was passed in
 	githubURL.Path = ""
