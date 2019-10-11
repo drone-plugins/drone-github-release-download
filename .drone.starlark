@@ -1,3 +1,5 @@
+# drone-github-release-download build
+
 def main(ctx):
   before = testing()
 
