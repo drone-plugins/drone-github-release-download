@@ -98,7 +98,7 @@ def linux(arch):
         },
         'commands': [
           'go version',
-          'go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/linux/%s/drone-github-release-download' % arch ./cmd,
+          'go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/linux/%s/drone-github-release-download ./cmd' % arch,
         ],
         'when': {
           'event': {
@@ -117,7 +117,7 @@ def linux(arch):
         },
         'commands': [
           'go version',
-          'go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/linux/%s/drone-github-release-download' % arch ./cmd,
+          'go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/linux/%s/drone-github-release-download ./cmd' % arch,
         ],
         'when': {
           'event': [
@@ -217,7 +217,7 @@ def windows(version):
         },
         'commands': [
           'go version',
-          'go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe' ./cmd,
+          'go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe ./cmd',
         ],
         'when': {
           'event': {
@@ -234,7 +234,7 @@ def windows(version):
         },
         'commands': [
           'go version',
-          'go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe' ./cmd,
+          'go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe ./cmd',
         ],
         'when': {
           'event':  [
