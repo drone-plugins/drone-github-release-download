@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
-	github.com/drone-plugins/drone-plugin-lib v0.0.0-20191011232111-4914fdebc791
+	github.com/drone-plugins/drone-plugin-lib v0.0.0-20191011235651-f59267804f96
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/google/go-github/v28 v28.1.1
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
