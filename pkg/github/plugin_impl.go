@@ -55,6 +55,8 @@ func (p *pluginImpl) Validate() error {
 	if err != nil {
 		return errors.New("could not parse GitHub link")
 	}
+	// Remove the path in the case that DRONE_REPO_LINK was passed in
+	uri.Path = ""
 	p.settings.githubURL = uri
 
 	if len(p.settings.Files) == 0 {
