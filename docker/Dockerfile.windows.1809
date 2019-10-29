@@ -1,5 +1,5 @@
 # escape=`
-FROM mcr.microsoft.com/windows/servercore:1809@sha256:9f94d5526849a19719518acb697993a73599026dbdb8b3abcc78c1609f016492
+FROM plugins/base:windows-1903-amd64
 
 LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" `
   org.label-schema.name="Drone GitHub Release" `
