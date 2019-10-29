@@ -6,8 +6,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.0 h1:EoUDS0afbrsXAZ9YQ9jdu/mZ2sXgT1/2yyNng
 github.com/cpuguy83/go-md2man/v2 v2.0.0/go.mod h1:maD7wRr/U5Z6m/iR4s+kqSMx2CaBsrgA7czyZG/E6dU=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/drone-plugins/drone-plugin-lib v0.0.0-20191029213715-049cce9e3951 h1:CVKCsTbdVpccrSh2u6oeCoP/Vz9BGIomf9bKQntfw/M=
-github.com/drone-plugins/drone-plugin-lib v0.0.0-20191029213715-049cce9e3951/go.mod h1:2penQ5vTxdio0uuZ91dk3tuTkfZrCxJlAzzPxNyWFGo=
+github.com/drone-plugins/drone-plugin-lib v0.0.0-20191029221636-a8475a3999eb h1:jCIXqzde3pLLBt0iErGj1vw2ZOj5Ths6zTCKuAfGU/0=
+github.com/drone-plugins/drone-plugin-lib v0.0.0-20191029221636-a8475a3999eb/go.mod h1:2penQ5vTxdio0uuZ91dk3tuTkfZrCxJlAzzPxNyWFGo=
 github.com/golang/protobuf v1.2.0 h1:P3YflyNX/ehuJFLhxviNdFxQPkGK5cDcApsge1SqnvM=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
