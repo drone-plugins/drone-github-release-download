@@ -36,6 +36,7 @@ type Settings struct {
 }
 
 const latestTag = "latest"
+const prereleaseTag = "prerelease"
 
 func (p *pluginImpl) Validate() error {
 	// Validate the config
@@ -290,13 +291,62 @@ func (p *pluginImpl) getRelease(client *github.Client) (*github.RepositoryReleas
 	var release *github.RepositoryRelease
 	var err error
 
-	if p.settings.Tag == latestTag {
+	tag := p.settings.Tag
+
+	if tag == latestTag {
 		logrus.Debug("getting latest release")
 		release, _, err = client.Repositories.GetLatestRelease(p.network.Context, p.settings.Owner, p.settings.Name)
+	} else if tag == prereleaseTag {
+		logrus.Debug("getting latest prerelease")
+		release, err = p.getLatestPrerelease(client)
 	} else {
 		logrus.Debug("getting release by tag")
 		release, _, err = client.Repositories.GetReleaseByTag(p.network.Context, p.settings.Owner, p.settings.Name, p.settings.Tag)
 	}
 
 	return release, err
+}
+
+func (p *pluginImpl) getLatestPrerelease(client *github.Client) (*github.RepositoryRelease, error) {
+	var release *github.RepositoryRelease
+	opt := &github.ListOptions{PerPage: 10}
+
+	for {
+		logrus.WithFields(logrus.Fields{
+			"page":     opt.Page,
+			"per-page": opt.PerPage,
+		}).Debug("getting release listing page")
+
+		releases, resp, err := client.Repositories.ListReleases(
+			p.network.Context,
+			p.settings.Owner,
+			p.settings.Name,
+			opt,
+		)
+
+		if err != nil {
+			return nil, errors.Wrap(err, "Error getting release asssets")
+		}
+
+		for _, r := range releases {
+			if r.GetPrerelease() {
+				if release == nil {
+					release = r
+				} else if r.GetPublishedAt().After(release.GetPublishedAt().Time) {
+					release = r
+				}
+			}
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+
+	if release == nil {
+		return nil, errors.Errorf("Could not find latest prerelease")
+	}
+
+	return release, nil
 }
