@@ -6,7 +6,7 @@
 package main
 
 import (
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 
 	"github.com/drone-plugins/drone-github-release-download/pkg/github"
 )
@@ -26,40 +26,40 @@ func settingsFlags() []cli.Flag {
 	// Replace below with all the flags required for the plugin's specific
 	// settings.
 	return []cli.Flag{
-		cli.StringFlag{
-			Name:   githubURLFlag,
-			Usage:  "github url, defaults to current scm",
-			EnvVar: "PLUGIN_GITHUB_URL,DRONE_REPO_LINK",
+		&cli.StringFlag{
+			Name:    githubURLFlag,
+			Usage:   "github url, defaults to current scm",
+			EnvVars: []string{"PLUGIN_GITHUB_URL", "DRONE_REPO_LINK"},
 		},
-		cli.StringFlag{
-			Name:   apiKeyFlag,
-			Usage:  "api key to access github api",
-			EnvVar: "PLUGIN_API_KEY,GITHUB_RELEASE_DOWNLOAD_API_KEY,GITHUB_TOKEN",
+		&cli.StringFlag{
+			Name:    apiKeyFlag,
+			Usage:   "api key to access github api",
+			EnvVars: []string{"PLUGIN_API_KEY,GITHUB_RELEASE_DOWNLOAD_API_KEY,GITHUB_TOKEN"},
 		},
-		cli.StringFlag{
-			Name:   ownerFlag,
-			Usage:  "repository owner",
-			EnvVar: "PLUGIN_OWNER",
+		&cli.StringFlag{
+			Name:    ownerFlag,
+			Usage:   "repository owner",
+			EnvVars: []string{"PLUGIN_OWNER"},
 		},
-		cli.StringFlag{
-			Name:   nameFlag,
-			Usage:  "repository name",
-			EnvVar: "PLUGIN_NAME",
+		&cli.StringFlag{
+			Name:    nameFlag,
+			Usage:   "repository name",
+			EnvVars: []string{"PLUGIN_NAME"},
 		},
-		cli.StringFlag{
-			Name:   tagFlag,
-			Usage:  "release tag",
-			EnvVar: "PLUGIN_TAG",
+		&cli.StringFlag{
+			Name:    tagFlag,
+			Usage:   "release tag",
+			EnvVars: []string{"PLUGIN_TAG"},
 		},
-		cli.StringFlag{
-			Name:   pathFlag,
-			Usage:  "path to place downloaded files",
-			EnvVar: "PLUGIN_PATH",
+		&cli.StringFlag{
+			Name:    pathFlag,
+			Usage:   "path to place downloaded files",
+			EnvVars: []string{"PLUGIN_PATH"},
 		},
-		cli.StringSliceFlag{
-			Name:   filesFlag,
-			Usage:  "list of files to download",
-			EnvVar: "PLUGIN_FILES",
+		&cli.StringSliceFlag{
+			Name:    filesFlag,
+			Usage:   "list of files to download",
+			EnvVars: []string{"PLUGIN_FILES"},
 		},
 	}
 }
