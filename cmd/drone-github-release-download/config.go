@@ -34,7 +34,7 @@ func settingsFlags() []cli.Flag {
 		&cli.StringFlag{
 			Name:    apiKeyFlag,
 			Usage:   "api key to access github api",
-			EnvVars: []string{"PLUGIN_API_KEY,GITHUB_RELEASE_DOWNLOAD_API_KEY,GITHUB_TOKEN"},
+			EnvVars: []string{"PLUGIN_API_KEY", "GITHUB_RELEASE_DOWNLOAD_API_KEY", "GITHUB_TOKEN"},
 		},
 		&cli.StringFlag{
 			Name:    ownerFlag,
