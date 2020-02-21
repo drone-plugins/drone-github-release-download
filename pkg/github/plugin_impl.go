@@ -243,7 +243,11 @@ func (p *pluginImpl) getReleaseAssets(client *github.Client, release *github.Rep
 			}).Debug("Found asset")
 
 			for _, file := range p.settings.Files {
-				if file == assetName {
+				match, err := filepath.Match(file, assetName)
+				if err != nil {
+					return nil, errors.Wrapf(err, "Error with file matching pattern %s", file)
+				}
+				if match {
 					assetsToDownload = append(assetsToDownload, asset)
 
 					if len(assetsToDownload) == fileCount {
