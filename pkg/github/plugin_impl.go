@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v28/github"
+	"github.com/google/go-github/v30/github"
 	"github.com/mitchellh/ioprogress"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -153,6 +153,7 @@ func (p *pluginImpl) Exec() error {
 			p.settings.Owner,
 			p.settings.Name,
 			asset.GetID(),
+			p.network.Client,
 		)
 		if err != nil {
 			return errors.Wrapf(err, "Error while downloading %s", name)
