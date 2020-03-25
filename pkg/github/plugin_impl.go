@@ -72,7 +72,7 @@ func (p *pluginImpl) Validate() error {
 	return nil
 }
 
-func (p *pluginImpl) Exec() error {
+func (p *pluginImpl) Execute() error {
 	// Create the client
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: p.settings.APIKey})
 	tc := oauth2.NewClient(
