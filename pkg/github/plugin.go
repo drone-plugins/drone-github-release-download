@@ -5,20 +5,16 @@
 
 package github
 
-import (
-	"github.com/drone-plugins/drone-plugin-lib/pkg/plugin"
-	"github.com/drone-plugins/drone-plugin-lib/pkg/urfave"
-)
+import "github.com/drone-plugins/drone-plugin-lib/drone"
 
 type pluginImpl struct {
 	settings Settings
-	pipeline plugin.Pipeline
-
-	network urfave.Network
+	pipeline drone.Pipeline
+	network  drone.Network
 }
 
 // New Plugin from the given Settings, Pipeline, and Network.
-func New(settings Settings, pipeline plugin.Pipeline, network urfave.Network) plugin.Plugin {
+func New(settings Settings, pipeline drone.Pipeline, network drone.Network) drone.Plugin {
 	return &pluginImpl{
 		settings: settings,
 		pipeline: pipeline,

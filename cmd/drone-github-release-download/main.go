@@ -10,7 +10,7 @@ package main
 import (
 	"os"
 
-	"github.com/drone-plugins/drone-plugin-lib/pkg/urfave"
+	"github.com/drone-plugins/drone-plugin-lib/urfave"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
@@ -50,7 +50,7 @@ func run(ctx *cli.Context) error {
 	}
 
 	// Run the plugin
-	if err := plugin.Exec(); err != nil {
+	if err := plugin.Execute(); err != nil {
 		return errors.Wrap(err, "exec failed")
 	}
 
