@@ -17,7 +17,6 @@ import (
 
 	"github.com/google/go-github/v30/github"
 	"github.com/mitchellh/ioprogress"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
@@ -43,27 +42,27 @@ const prereleaseTag = "prerelease"
 func (p *Plugin) Validate() error {
 	// Validate the config
 	if p.settings.APIKey == "" {
-		return errors.New("no api key provided")
+		return fmt.Errorf("no api key provided")
 	}
 
 	if p.settings.Owner == "" {
-		return errors.New("no repository owner provided")
+		return fmt.Errorf("no repository owner provided")
 	}
 
 	if p.settings.Name == "" {
-		return errors.New("no repository name provided")
+		return fmt.Errorf("no repository name provided")
 	}
 
 	uri, err := url.Parse(p.settings.GitHubURL)
 	if err != nil {
-		return errors.New("could not parse GitHub link")
+		return fmt.Errorf("could not parse GitHub link")
 	}
 	// Remove the path in the case that DRONE_REPO_LINK was passed in
 	uri.Path = ""
 	p.settings.githubURL = uri
 
 	if len(p.settings.Files.Value()) == 0 {
-		return errors.New("no files specified")
+		return fmt.Errorf("no files specified")
 	}
 
 	// Set defaults
@@ -102,7 +101,7 @@ func (p *Plugin) Execute() error {
 	// Get the repository
 	repo, _, err := client.Repositories.Get(p.network.Context, p.settings.Owner, p.settings.Name)
 	if err != nil {
-		return errors.Wrapf(err, "Error getting repository %s/%s", p.settings.Owner, p.settings.Name)
+		return fmt.Errorf("error getting repository %s/%s: %w", p.settings.Owner, p.settings.Name, err)
 	}
 
 	logrus.WithFields(logrus.Fields{
@@ -113,7 +112,7 @@ func (p *Plugin) Execute() error {
 	// Get the release
 	release, err := p.getRelease(client)
 	if err != nil {
-		return errors.Wrapf(err, "Error getting release %s", p.settings.Tag)
+		return fmt.Errorf("error getting release %s: %w", p.settings.Tag, err)
 	}
 
 	logrus.WithFields(logrus.Fields{
@@ -125,18 +124,18 @@ func (p *Plugin) Execute() error {
 	// Get the assets
 	assets, err := p.getReleaseAssets(client, release)
 	if err != nil {
-		return errors.Wrapf(err, "Error getting release %s assets", p.settings.Tag)
+		return fmt.Errorf("error getting release %s assets: %w", p.settings.Tag, err)
 	}
 
 	// Get the path to download to
 	downloadPath, err := filepath.Abs(p.settings.Path)
 	if err != nil {
-		return errors.Wrapf(err, "Could not create download path %s", p.settings.Path)
+		return fmt.Errorf("could not create download path %s: %w", p.settings.Path, err)
 	}
 
 	err = os.MkdirAll(downloadPath, os.ModeDir)
 	if err != nil {
-		return errors.Wrapf(err, "Could not create directory %s", p.settings.Path)
+		return fmt.Errorf("could not create directory %s: %w", p.settings.Path, err)
 	}
 
 	logrus.WithField("path", downloadPath).Info("downloading assets to")
@@ -159,7 +158,7 @@ func (p *Plugin) Execute() error {
 			p.network.Client,
 		)
 		if err != nil {
-			return errors.Wrapf(err, "Error while downloading %s", name)
+			return fmt.Errorf("error while downloading %s: %w", name, err)
 		}
 
 		// DownloadReleaseAsset either returns a io.ReadCloser or a redirect URL
@@ -168,7 +167,7 @@ func (p *Plugin) Execute() error {
 			resp, err := p.network.Client.Get(redirectURL)
 
 			if err != nil {
-				return errors.Wrapf(err, "Error while downloading %s from %s", name, redirectURL)
+				return fmt.Errorf("error while downloading %s from %s: %w", name, redirectURL, err)
 			}
 
 			rc = resp.Body
@@ -178,7 +177,7 @@ func (p *Plugin) Execute() error {
 		assetPath := filepath.Join(downloadPath, asset.GetName())
 		out, err := os.Create(assetPath)
 		if err != nil {
-			return errors.Wrapf(err, "Error creating file at %s", assetPath)
+			return fmt.Errorf("error creating file at %s: %w", assetPath, err)
 		}
 		defer out.Close()
 
@@ -195,12 +194,12 @@ func (p *Plugin) Execute() error {
 
 		_, err = io.Copy(out, rp)
 		if err != nil {
-			return errors.Wrapf(err, "Error while downloading file %s", name)
+			return fmt.Errorf("error while downloading file %s: %w", name, err)
 		}
 
 		fileInfo, err := out.Stat()
 		if err != nil {
-			return errors.Wrapf(err, "Error when getting file information for %s", assetPath)
+			return fmt.Errorf("error when getting file information for %s: %w", assetPath, err)
 		}
 
 		logrus.WithFields(logrus.Fields{
@@ -235,7 +234,7 @@ func (p *Plugin) getReleaseAssets(client *github.Client, release *github.Reposit
 		)
 
 		if err != nil {
-			return nil, errors.Wrap(err, "Error getting release asssets")
+			return nil, fmt.Errorf("error getting release asssets: %w", err)
 		}
 
 		for _, asset := range assets {
@@ -250,7 +249,7 @@ func (p *Plugin) getReleaseAssets(client *github.Client, release *github.Reposit
 			for _, file := range files {
 				match, err := filepath.Match(file, assetName)
 				if err != nil {
-					return nil, errors.Wrapf(err, "Error with file matching pattern %s", file)
+					return nil, fmt.Errorf("error with file matching pattern %s: %w", file, err)
 				}
 				if match {
 					assetsToDownload = append(assetsToDownload, asset)
@@ -288,7 +287,7 @@ func (p *Plugin) getReleaseAssets(client *github.Client, release *github.Reposit
 			}
 		}
 
-		return nil, errors.Errorf("Missing files in download %s", missing)
+		return nil, fmt.Errorf("missing files in download %s", missing)
 	}
 
 	return assetsToDownload, nil
@@ -334,7 +333,7 @@ func (p *Plugin) getLatestPrerelease(client *github.Client) (*github.RepositoryR
 		)
 
 		if err != nil {
-			return nil, errors.Wrap(err, "Error getting release asssets")
+			return nil, fmt.Errorf("error getting release asssets: %w", err)
 		}
 
 		for _, r := range releases {
@@ -354,7 +353,7 @@ func (p *Plugin) getLatestPrerelease(client *github.Client) (*github.RepositoryR
 	}
 
 	if release == nil {
-		return nil, errors.Errorf("Could not find latest prerelease")
+		return nil, fmt.Errorf("could not find latest prerelease")
 	}
 
 	return release, nil
