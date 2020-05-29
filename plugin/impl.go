@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v30/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/mitchellh/ioprogress"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
