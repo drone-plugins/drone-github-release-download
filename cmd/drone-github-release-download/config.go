@@ -1,4 +1,4 @@
-// Copyright (c) 2019, the Drone Plugins project authors.
+// Copyright (c) 2020, the Drone Plugins project authors.
 // Please see the AUTHORS file for details. All rights reserved.
 // Use of this source code is governed by an Apache 2.0 license that can be
 // found in the LICENSE file.
@@ -7,72 +7,52 @@ package main
 
 import (
 	"github.com/urfave/cli/v2"
-
-	"github.com/drone-plugins/drone-github-release-download/pkg/github"
-)
-
-const (
-	githubURLFlag = "github-url"
-	apiKeyFlag    = "api-key"
-	ownerFlag     = "owner"
-	nameFlag      = "name"
-	tagFlag       = "tag"
-	pathFlag      = "path"
-	filesFlag     = "files"
 )
 
 // settingsFlags has the cli.Flags for the plugin.Settings.
 func settingsFlags() []cli.Flag {
-	// Replace below with all the flags required for the plugin's specific
-	// settings.
 	return []cli.Flag{
 		&cli.StringFlag{
-			Name:    githubURLFlag,
+			Name:    "github-url",
 			Usage:   "github url, defaults to current scm",
 			EnvVars: []string{"PLUGIN_GITHUB_URL", "DRONE_REPO_LINK"},
+			Destination: &settings.GitHubURL,
 		},
 		&cli.StringFlag{
-			Name:    apiKeyFlag,
+			Name:    "api-key",
 			Usage:   "api key to access github api",
 			EnvVars: []string{"PLUGIN_API_KEY", "GITHUB_RELEASE_DOWNLOAD_API_KEY", "GITHUB_TOKEN"},
+			Destination: &settings.APIKey,
 		},
 		&cli.StringFlag{
-			Name:    ownerFlag,
+			Name:    "owner",
 			Usage:   "repository owner",
 			EnvVars: []string{"PLUGIN_OWNER"},
+			Destination: &settings.Owner,
 		},
 		&cli.StringFlag{
-			Name:    nameFlag,
+			Name:    "name",
 			Usage:   "repository name",
 			EnvVars: []string{"PLUGIN_NAME"},
+			Destination: &settings.Name,
 		},
 		&cli.StringFlag{
-			Name:    tagFlag,
+			Name:    "tag",
 			Usage:   "release tag",
 			EnvVars: []string{"PLUGIN_TAG"},
+			Destination: &settings.Tag,
 		},
 		&cli.StringFlag{
-			Name:    pathFlag,
+			Name:    "path",
 			Usage:   "path to place downloaded files",
 			EnvVars: []string{"PLUGIN_PATH"},
+			Destination: &settings.Path,
 		},
 		&cli.StringSliceFlag{
-			Name:    filesFlag,
+			Name:    "files",
 			Usage:   "list of files to download",
 			EnvVars: []string{"PLUGIN_FILES"},
+			Destination: &settings.Files,
 		},
-	}
-}
-
-// settingsFromContext creates a plugin.Settings from the cli.Context.
-func settingsFromContext(ctx *cli.Context) github.Settings {
-	return github.Settings{
-		GitHubURL: ctx.String(githubURLFlag),
-		APIKey:    ctx.String(apiKeyFlag),
-		Owner:     ctx.String(ownerFlag),
-		Name:      ctx.String(nameFlag),
-		Tag:       ctx.String(tagFlag),
-		Path:      ctx.String(pathFlag),
-		Files:     ctx.StringSlice(filesFlag),
 	}
 }

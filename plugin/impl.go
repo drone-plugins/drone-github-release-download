@@ -1,9 +1,9 @@
-// Copyright (c) 2019, the Drone Plugins project authors.
+// Copyright (c) 2020, the Drone Plugins project authors.
 // Please see the AUTHORS file for details. All rights reserved.
 // Use of this source code is governed by an Apache 2.0 license that can be
 // found in the LICENSE file.
 
-package github
+package plugin
 
 import (
 	"context"
@@ -19,6 +19,7 @@ import (
 	"github.com/mitchellh/ioprogress"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 )
 
@@ -30,7 +31,7 @@ type Settings struct {
 	Name      string
 	Tag       string
 	Path      string
-	Files     []string
+	Files     cli.StringSlice
 
 	githubURL *url.URL
 }
@@ -38,7 +39,8 @@ type Settings struct {
 const latestTag = "latest"
 const prereleaseTag = "prerelease"
 
-func (p *pluginImpl) Validate() error {
+// Validate handles the settings validation of the plugin.
+func (p *Plugin) Validate() error {
 	// Validate the config
 	if p.settings.APIKey == "" {
 		return errors.New("no api key provided")
@@ -60,7 +62,7 @@ func (p *pluginImpl) Validate() error {
 	uri.Path = ""
 	p.settings.githubURL = uri
 
-	if len(p.settings.Files) == 0 {
+	if len(p.settings.Files.Value()) == 0 {
 		return errors.New("no files specified")
 	}
 
@@ -72,7 +74,8 @@ func (p *pluginImpl) Validate() error {
 	return nil
 }
 
-func (p *pluginImpl) Execute() error {
+// Execute provides the implementation of the plugin.
+func (p *Plugin) Execute() error {
 	// Create the client
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: p.settings.APIKey})
 	tc := oauth2.NewClient(
@@ -210,11 +213,12 @@ func (p *pluginImpl) Execute() error {
 	return nil
 }
 
-func (p *pluginImpl) getReleaseAssets(client *github.Client, release *github.RepositoryRelease) ([]*github.ReleaseAsset, error) {
+func (p *Plugin) getReleaseAssets(client *github.Client, release *github.RepositoryRelease) ([]*github.ReleaseAsset, error) {
 	// Iterate over release assets
 	var assetsToDownload []*github.ReleaseAsset
 	opt := &github.ListOptions{PerPage: 10}
-	fileCount := len(p.settings.Files)
+	files := p.settings.Files.Value()
+	fileCount := len(files)
 
 	for {
 		logrus.WithFields(logrus.Fields{
@@ -243,7 +247,7 @@ func (p *pluginImpl) getReleaseAssets(client *github.Client, release *github.Rep
 				"created-at":   asset.GetCreatedAt(),
 			}).Debug("Found asset")
 
-			for _, file := range p.settings.Files {
+			for _, file := range files {
 				match, err := filepath.Match(file, assetName)
 				if err != nil {
 					return nil, errors.Wrapf(err, "Error with file matching pattern %s", file)
@@ -269,7 +273,7 @@ func (p *pluginImpl) getReleaseAssets(client *github.Client, release *github.Rep
 	if len(assetsToDownload) != fileCount {
 		var missing []string
 
-		for _, file := range p.settings.Files {
+		for _, file := range files {
 			found := false
 
 			for _, asset := range assetsToDownload {
@@ -290,7 +294,7 @@ func (p *pluginImpl) getReleaseAssets(client *github.Client, release *github.Rep
 	return assetsToDownload, nil
 }
 
-func (p *pluginImpl) getRelease(client *github.Client) (*github.RepositoryRelease, error) {
+func (p *Plugin) getRelease(client *github.Client) (*github.RepositoryRelease, error) {
 	logrus.WithField("tag", p.settings.Tag).Info("retrieving release")
 
 	var release *github.RepositoryRelease
@@ -312,7 +316,7 @@ func (p *pluginImpl) getRelease(client *github.Client) (*github.RepositoryReleas
 	return release, err
 }
 
-func (p *pluginImpl) getLatestPrerelease(client *github.Client) (*github.RepositoryRelease, error) {
+func (p *Plugin) getLatestPrerelease(client *github.Client) (*github.RepositoryRelease, error) {
 	var release *github.RepositoryRelease
 	opt := &github.ListOptions{PerPage: 10}
 
