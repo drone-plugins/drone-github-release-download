@@ -79,7 +79,7 @@ func (p *Plugin) Execute() error {
 	// Create the client
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: p.settings.APIKey})
 	tc := oauth2.NewClient(
-		context.WithValue(oauth2.NoContext, oauth2.HTTPClient, p.network.Client),
+		context.WithValue(context.Background(), oauth2.HTTPClient, p.network.Client),
 		ts,
 	)
 
