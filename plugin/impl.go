@@ -1,9 +1,9 @@
-// Copyright (c) 2019, the Drone Plugins project authors.
+// Copyright (c) 2020, the Drone Plugins project authors.
 // Please see the AUTHORS file for details. All rights reserved.
 // Use of this source code is governed by an Apache 2.0 license that can be
 // found in the LICENSE file.
 
-package github
+package plugin
 
 import (
 	"context"
@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v30/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/mitchellh/ioprogress"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 )
 
@@ -30,7 +30,7 @@ type Settings struct {
 	Name      string
 	Tag       string
 	Path      string
-	Files     []string
+	Files     cli.StringSlice
 
 	githubURL *url.URL
 }
@@ -38,30 +38,31 @@ type Settings struct {
 const latestTag = "latest"
 const prereleaseTag = "prerelease"
 
-func (p *pluginImpl) Validate() error {
+// Validate handles the settings validation of the plugin.
+func (p *Plugin) Validate() error {
 	// Validate the config
 	if p.settings.APIKey == "" {
-		return errors.New("no api key provided")
+		return fmt.Errorf("no api key provided")
 	}
 
 	if p.settings.Owner == "" {
-		return errors.New("no repository owner provided")
+		return fmt.Errorf("no repository owner provided")
 	}
 
 	if p.settings.Name == "" {
-		return errors.New("no repository name provided")
+		return fmt.Errorf("no repository name provided")
 	}
 
 	uri, err := url.Parse(p.settings.GitHubURL)
 	if err != nil {
-		return errors.New("could not parse GitHub link")
+		return fmt.Errorf("could not parse GitHub link")
 	}
 	// Remove the path in the case that DRONE_REPO_LINK was passed in
 	uri.Path = ""
 	p.settings.githubURL = uri
 
-	if len(p.settings.Files) == 0 {
-		return errors.New("no files specified")
+	if len(p.settings.Files.Value()) == 0 {
+		return fmt.Errorf("no files specified")
 	}
 
 	// Set defaults
@@ -72,11 +73,12 @@ func (p *pluginImpl) Validate() error {
 	return nil
 }
 
-func (p *pluginImpl) Execute() error {
+// Execute provides the implementation of the plugin.
+func (p *Plugin) Execute() error {
 	// Create the client
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: p.settings.APIKey})
 	tc := oauth2.NewClient(
-		context.WithValue(oauth2.NoContext, oauth2.HTTPClient, p.network.Client),
+		context.WithValue(context.Background(), oauth2.HTTPClient, p.network.Client),
 		ts,
 	)
 
@@ -99,7 +101,7 @@ func (p *pluginImpl) Execute() error {
 	// Get the repository
 	repo, _, err := client.Repositories.Get(p.network.Context, p.settings.Owner, p.settings.Name)
 	if err != nil {
-		return errors.Wrapf(err, "Error getting repository %s/%s", p.settings.Owner, p.settings.Name)
+		return fmt.Errorf("error getting repository %s/%s: %w", p.settings.Owner, p.settings.Name, err)
 	}
 
 	logrus.WithFields(logrus.Fields{
@@ -110,7 +112,7 @@ func (p *pluginImpl) Execute() error {
 	// Get the release
 	release, err := p.getRelease(client)
 	if err != nil {
-		return errors.Wrapf(err, "Error getting release %s", p.settings.Tag)
+		return fmt.Errorf("error getting release %s: %w", p.settings.Tag, err)
 	}
 
 	logrus.WithFields(logrus.Fields{
@@ -122,18 +124,18 @@ func (p *pluginImpl) Execute() error {
 	// Get the assets
 	assets, err := p.getReleaseAssets(client, release)
 	if err != nil {
-		return errors.Wrapf(err, "Error getting release %s assets", p.settings.Tag)
+		return fmt.Errorf("error getting release %s assets: %w", p.settings.Tag, err)
 	}
 
 	// Get the path to download to
 	downloadPath, err := filepath.Abs(p.settings.Path)
 	if err != nil {
-		return errors.Wrapf(err, "Could not create download path %s", p.settings.Path)
+		return fmt.Errorf("could not create download path %s: %w", p.settings.Path, err)
 	}
 
 	err = os.MkdirAll(downloadPath, os.ModeDir)
 	if err != nil {
-		return errors.Wrapf(err, "Could not create directory %s", p.settings.Path)
+		return fmt.Errorf("could not create directory %s: %w", p.settings.Path, err)
 	}
 
 	logrus.WithField("path", downloadPath).Info("downloading assets to")
@@ -156,7 +158,7 @@ func (p *pluginImpl) Execute() error {
 			p.network.Client,
 		)
 		if err != nil {
-			return errors.Wrapf(err, "Error while downloading %s", name)
+			return fmt.Errorf("error while downloading %s: %w", name, err)
 		}
 
 		// DownloadReleaseAsset either returns a io.ReadCloser or a redirect URL
@@ -165,7 +167,7 @@ func (p *pluginImpl) Execute() error {
 			resp, err := p.network.Client.Get(redirectURL)
 
 			if err != nil {
-				return errors.Wrapf(err, "Error while downloading %s from %s", name, redirectURL)
+				return fmt.Errorf("error while downloading %s from %s: %w", name, redirectURL, err)
 			}
 
 			rc = resp.Body
@@ -175,7 +177,7 @@ func (p *pluginImpl) Execute() error {
 		assetPath := filepath.Join(downloadPath, asset.GetName())
 		out, err := os.Create(assetPath)
 		if err != nil {
-			return errors.Wrapf(err, "Error creating file at %s", assetPath)
+			return fmt.Errorf("error creating file at %s: %w", assetPath, err)
 		}
 		defer out.Close()
 
@@ -192,12 +194,12 @@ func (p *pluginImpl) Execute() error {
 
 		_, err = io.Copy(out, rp)
 		if err != nil {
-			return errors.Wrapf(err, "Error while downloading file %s", name)
+			return fmt.Errorf("error while downloading file %s: %w", name, err)
 		}
 
 		fileInfo, err := out.Stat()
 		if err != nil {
-			return errors.Wrapf(err, "Error when getting file information for %s", assetPath)
+			return fmt.Errorf("error when getting file information for %s: %w", assetPath, err)
 		}
 
 		logrus.WithFields(logrus.Fields{
@@ -210,11 +212,12 @@ func (p *pluginImpl) Execute() error {
 	return nil
 }
 
-func (p *pluginImpl) getReleaseAssets(client *github.Client, release *github.RepositoryRelease) ([]*github.ReleaseAsset, error) {
+func (p *Plugin) getReleaseAssets(client *github.Client, release *github.RepositoryRelease) ([]*github.ReleaseAsset, error) {
 	// Iterate over release assets
 	var assetsToDownload []*github.ReleaseAsset
 	opt := &github.ListOptions{PerPage: 10}
-	fileCount := len(p.settings.Files)
+	files := p.settings.Files.Value()
+	fileCount := len(files)
 
 	for {
 		logrus.WithFields(logrus.Fields{
@@ -231,7 +234,7 @@ func (p *pluginImpl) getReleaseAssets(client *github.Client, release *github.Rep
 		)
 
 		if err != nil {
-			return nil, errors.Wrap(err, "Error getting release asssets")
+			return nil, fmt.Errorf("error getting release asssets: %w", err)
 		}
 
 		for _, asset := range assets {
@@ -243,10 +246,10 @@ func (p *pluginImpl) getReleaseAssets(client *github.Client, release *github.Rep
 				"created-at":   asset.GetCreatedAt(),
 			}).Debug("Found asset")
 
-			for _, file := range p.settings.Files {
+			for _, file := range files {
 				match, err := filepath.Match(file, assetName)
 				if err != nil {
-					return nil, errors.Wrapf(err, "Error with file matching pattern %s", file)
+					return nil, fmt.Errorf("error with file matching pattern %s: %w", file, err)
 				}
 				if match {
 					assetsToDownload = append(assetsToDownload, asset)
@@ -269,7 +272,7 @@ func (p *pluginImpl) getReleaseAssets(client *github.Client, release *github.Rep
 	if len(assetsToDownload) != fileCount {
 		var missing []string
 
-		for _, file := range p.settings.Files {
+		for _, file := range files {
 			found := false
 
 			for _, asset := range assetsToDownload {
@@ -284,13 +287,13 @@ func (p *pluginImpl) getReleaseAssets(client *github.Client, release *github.Rep
 			}
 		}
 
-		return nil, errors.Errorf("Missing files in download %s", missing)
+		return nil, fmt.Errorf("missing files in download %s", missing)
 	}
 
 	return assetsToDownload, nil
 }
 
-func (p *pluginImpl) getRelease(client *github.Client) (*github.RepositoryRelease, error) {
+func (p *Plugin) getRelease(client *github.Client) (*github.RepositoryRelease, error) {
 	logrus.WithField("tag", p.settings.Tag).Info("retrieving release")
 
 	var release *github.RepositoryRelease
@@ -312,7 +315,7 @@ func (p *pluginImpl) getRelease(client *github.Client) (*github.RepositoryReleas
 	return release, err
 }
 
-func (p *pluginImpl) getLatestPrerelease(client *github.Client) (*github.RepositoryRelease, error) {
+func (p *Plugin) getLatestPrerelease(client *github.Client) (*github.RepositoryRelease, error) {
 	var release *github.RepositoryRelease
 	opt := &github.ListOptions{PerPage: 10}
 
@@ -330,7 +333,7 @@ func (p *pluginImpl) getLatestPrerelease(client *github.Client) (*github.Reposit
 		)
 
 		if err != nil {
-			return nil, errors.Wrap(err, "Error getting release asssets")
+			return nil, fmt.Errorf("error getting release asssets: %w", err)
 		}
 
 		for _, r := range releases {
@@ -350,7 +353,7 @@ func (p *pluginImpl) getLatestPrerelease(client *github.Client) (*github.Reposit
 	}
 
 	if release == nil {
-		return nil, errors.Errorf("Could not find latest prerelease")
+		return nil, fmt.Errorf("could not find latest prerelease")
 	}
 
 	return release, nil

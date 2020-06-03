@@ -1,4 +1,4 @@
-// Copyright (c) 2019, the Drone Plugins project authors.
+// Copyright (c) 2020, the Drone Plugins project authors.
 // Please see the AUTHORS file for details. All rights reserved.
 // Use of this source code is governed by an Apache 2.0 license that can be
 // found in the LICENSE file.
@@ -10,49 +10,52 @@ package main
 import (
 	"os"
 
+	"github.com/drone-plugins/drone-github-release-download/plugin"
+	"github.com/drone-plugins/drone-plugin-lib/errors"
 	"github.com/drone-plugins/drone-plugin-lib/urfave"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
-
-	"github.com/drone-plugins/drone-github-release-download/pkg/github"
 )
 
-var (
-	version = "unknown"
-)
+var version = "unknown"
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "github release download plugin"
-	app.Usage = "downloads files form the specified github release"
-	app.Action = run
-	app.Flags = append(settingsFlags(), urfave.Flags()...)
+	app.Name = "drone-github-release-download"
+	app.Usage = "downloads files from the specified github release"
+	app.Version = version
 
-	// Run the application
+	settings := plugin.Settings{}
+	app.Flags = append(settingsFlags(&settings), urfave.Flags()...)
+
+	app.Action = func(ctx *cli.Context) error {
+		urfave.LoggingFromContext(ctx)
+
+		plugin := plugin.New(
+			settings,
+			urfave.PipelineFromContext(ctx),
+			urfave.NetworkFromContext(ctx),
+		)
+
+		if err := plugin.Validate(); err != nil {
+			if e, ok := err.(errors.ExitCoder); ok {
+				return e
+			}
+
+			return errors.ExitMessagef("validation failed: %w", err)
+		}
+
+		if err := plugin.Execute(); err != nil {
+			if e, ok := err.(errors.ExitCoder); ok {
+				return e
+			}
+
+			return errors.ExitMessagef("execution failed: %w", err)
+		}
+
+		return nil
+	}
+
 	if err := app.Run(os.Args); err != nil {
-		logrus.Fatal(err)
+		errors.HandleExit(err)
 	}
-}
-
-func run(ctx *cli.Context) error {
-	urfave.LoggingFromContext(ctx)
-
-	plugin := github.New(
-		settingsFromContext(ctx),
-		urfave.PipelineFromContext(ctx),
-		urfave.NetworkFromContext(ctx),
-	)
-
-	// Validate the settings
-	if err := plugin.Validate(); err != nil {
-		return errors.Wrap(err, "validation failed")
-	}
-
-	// Run the plugin
-	if err := plugin.Execute(); err != nil {
-		return errors.Wrap(err, "exec failed")
-	}
-
-	return nil
 }
