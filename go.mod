@@ -3,7 +3,7 @@ module github.com/drone-plugins/drone-github-release-download
 go 1.13
 
 require (
-	github.com/drone-plugins/drone-plugin-lib v0.3.0
+	github.com/drone-plugins/drone-plugin-lib v0.3.1
 	github.com/google/go-github/v32 v32.0.0
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
 	github.com/sirupsen/logrus v1.6.0

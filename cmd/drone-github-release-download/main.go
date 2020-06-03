@@ -10,10 +10,10 @@ package main
 import (
 	"os"
 
+	"github.com/drone-plugins/drone-github-release-download/plugin"
 	"github.com/drone-plugins/drone-plugin-lib/errors"
 	"github.com/drone-plugins/drone-plugin-lib/urfave"
 	"github.com/urfave/cli/v2"
-	"github.com/drone-plugins/drone-github-release-download/plugin"
 )
 
 var (
@@ -27,7 +27,7 @@ func main() {
 	app.Usage = "downloads files from the specified github release"
 	app.Version = version
 	app.Action = run
-	app.Flags = append(settingsFlags(), urfave.Flags()...)
+	app.Flags = append(settingsFlags(&settings), urfave.Flags()...)
 
 	if err := app.Run(os.Args); err != nil {
 		errors.HandleExit(err)
@@ -44,11 +44,19 @@ func run(ctx *cli.Context) error {
 	)
 
 	if err := plugin.Validate(); err != nil {
-		return err
+		if e, ok := err.(errors.ExitCoder); ok {
+			return e
+		}
+
+		return errors.ExitMessagef("validation failed: %w", err)
 	}
 
 	if err := plugin.Execute(); err != nil {
-		return err
+		if e, ok := err.(errors.ExitCoder); ok {
+			return e
+		}
+
+		return errors.ExitMessagef("execution failed: %w", err)
 	}
 
 	return nil
