@@ -16,48 +16,46 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var (
-	version  = "unknown"
-	settings = plugin.Settings{}
-)
+var version = "unknown"
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "drone-github-release-download"
 	app.Usage = "downloads files from the specified github release"
 	app.Version = version
-	app.Action = run
+
+	settings := plugin.Settings{}
 	app.Flags = append(settingsFlags(&settings), urfave.Flags()...)
+
+	app.Action = func(ctx *cli.Context) error {
+		urfave.LoggingFromContext(ctx)
+
+		plugin := plugin.New(
+			settings,
+			urfave.PipelineFromContext(ctx),
+			urfave.NetworkFromContext(ctx),
+		)
+
+		if err := plugin.Validate(); err != nil {
+			if e, ok := err.(errors.ExitCoder); ok {
+				return e
+			}
+
+			return errors.ExitMessagef("validation failed: %w", err)
+		}
+
+		if err := plugin.Execute(); err != nil {
+			if e, ok := err.(errors.ExitCoder); ok {
+				return e
+			}
+
+			return errors.ExitMessagef("execution failed: %w", err)
+		}
+
+		return nil
+	}
 
 	if err := app.Run(os.Args); err != nil {
 		errors.HandleExit(err)
 	}
-}
-
-func run(ctx *cli.Context) error {
-	urfave.LoggingFromContext(ctx)
-
-	plugin := plugin.New(
-		settings,
-		urfave.PipelineFromContext(ctx),
-		urfave.NetworkFromContext(ctx),
-	)
-
-	if err := plugin.Validate(); err != nil {
-		if e, ok := err.(errors.ExitCoder); ok {
-			return e
-		}
-
-		return errors.ExitMessagef("validation failed: %w", err)
-	}
-
-	if err := plugin.Execute(); err != nil {
-		if e, ok := err.(errors.ExitCoder); ok {
-			return e
-		}
-
-		return errors.ExitMessagef("execution failed: %w", err)
-	}
-
-	return nil
 }
