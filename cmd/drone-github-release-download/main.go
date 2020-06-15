@@ -13,25 +13,38 @@ import (
 	"github.com/drone-plugins/drone-github-release-download/plugin"
 	"github.com/drone-plugins/drone-plugin-lib/errors"
 	"github.com/drone-plugins/drone-plugin-lib/urfave"
+	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 )
 
 var version = "unknown"
 
 func main() {
-	app := cli.NewApp()
-	app.Name = "drone-github-release-download"
-	app.Usage = "downloads files from the specified github release"
-	app.Version = version
+	settings := &plugin.Settings{}
 
-	settings := plugin.Settings{}
-	app.Flags = append(settingsFlags(&settings), urfave.Flags()...)
+	if _, err := os.Stat("/run/drone/env"); err == nil {
+		godotenv.Overload("/run/drone/env")
+	}
 
-	app.Action = func(ctx *cli.Context) error {
+	app := &cli.App{
+		Name:    "drone-github-release-download",
+		Usage:   "download github release artifacts",
+		Version: version,
+		Flags:   append(settingsFlags(settings), urfave.Flags()...),
+		Action:  run(settings),
+	}
+
+	if err := app.Run(os.Args); err != nil {
+		errors.HandleExit(err)
+	}
+}
+
+func run(settings *plugin.Settings) cli.ActionFunc {
+	return func(ctx *cli.Context) error {
 		urfave.LoggingFromContext(ctx)
 
 		plugin := plugin.New(
-			settings,
+			*settings,
 			urfave.PipelineFromContext(ctx),
 			urfave.NetworkFromContext(ctx),
 		)
@@ -53,9 +66,5 @@ func main() {
 		}
 
 		return nil
-	}
-
-	if err := app.Run(os.Args); err != nil {
-		errors.HandleExit(err)
 	}
 }
