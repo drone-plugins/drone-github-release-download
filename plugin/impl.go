@@ -9,14 +9,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/v32/github"
-	"github.com/mitchellh/ioprogress"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
@@ -96,7 +95,7 @@ func (p *Plugin) Execute() error {
 		"github-url": p.settings.githubURL.String(),
 		"base-url":   client.BaseURL.String(),
 		"upload-url": client.BaseURL.String(),
-	}).Debug("Connecting to GitHub instance")
+	}).Debug("connecting to github instance")
 
 	// Get the repository
 	repo, _, err := client.Repositories.Get(p.network.Context, p.settings.Owner, p.settings.Name)
@@ -121,9 +120,20 @@ func (p *Plugin) Execute() error {
 		"published-at": release.GetPublishedAt(),
 	}).Info("found release")
 
+	// Determine if the source code tarball or zipball is being requested
+	tarball := false
+	zipball := false
+	for _, file := range p.settings.Files.Value() {
+		if strings.EqualFold("tarball", file) {
+			tarball = true
+		} else if strings.EqualFold("zipball", file) {
+			zipball = true
+		}
+	}
+
 	// Get the assets
 	assets, err := p.getReleaseAssets(client, release)
-	if err != nil {
+	if err != nil && (!tarball && !zipball) {
 		return fmt.Errorf("error getting release %s assets: %w", p.settings.Tag, err)
 	}
 
@@ -147,7 +157,7 @@ func (p *Plugin) Execute() error {
 			"name":         name,
 			"content-type": asset.GetContentType(),
 			"created-at":   asset.GetCreatedAt(),
-		}).Info("Downloading asset")
+		}).Info("downloading asset")
 
 		var rc io.ReadCloser
 		rc, redirectURL, err := client.Repositories.DownloadReleaseAsset(
@@ -165,7 +175,6 @@ func (p *Plugin) Execute() error {
 		// if there is no error so it can be assumed that we have a URL
 		if rc == nil {
 			resp, err := p.network.Client.Get(redirectURL)
-
 			if err != nil {
 				return fmt.Errorf("error while downloading %s from %s: %w", name, redirectURL, err)
 			}
@@ -174,39 +183,24 @@ func (p *Plugin) Execute() error {
 		}
 		defer rc.Close()
 
-		assetPath := filepath.Join(downloadPath, asset.GetName())
-		out, err := os.Create(assetPath)
+		err = writeAsset(rc, name, downloadPath)
 		if err != nil {
-			return fmt.Errorf("error creating file at %s: %w", assetPath, err)
+			return err
 		}
-		defer out.Close()
+	}
 
-		bar := ioprogress.DrawTextFormatBar(20)
-		drawFunc := ioprogress.DrawTerminalf(os.Stdout, func(progress, total int64) string {
-			return fmt.Sprintf("%s %s %20s", name, bar(progress, total), ioprogress.DrawTextFormatBytes(progress, total))
-		})
-		rp := &ioprogress.Reader{
-			Reader:       rc,
-			DrawInterval: 5 * time.Second,
-			Size:         int64(asset.GetSize()),
-			DrawFunc:     drawFunc,
-		}
-
-		_, err = io.Copy(out, rp)
+	if tarball {
+		p.downloadAssetFromURL(release.GetTarballURL(), "release.tar.gz", downloadPath)
 		if err != nil {
-			return fmt.Errorf("error while downloading file %s: %w", name, err)
+			return fmt.Errorf("error while downloading tarball: %w", err)
 		}
+	}
 
-		fileInfo, err := out.Stat()
+	if zipball {
+		p.downloadAssetFromURL(release.GetZipballURL(), "release.zip", downloadPath)
 		if err != nil {
-			return fmt.Errorf("error when getting file information for %s: %w", assetPath, err)
+			return fmt.Errorf("error while downloading zipball: %w", err)
 		}
-
-		logrus.WithFields(logrus.Fields{
-			"name":  name,
-			"path":  assetPath,
-			"bytes": fileInfo.Size(),
-		}).Info("Downloaded asset")
 	}
 
 	return nil
@@ -244,7 +238,7 @@ func (p *Plugin) getReleaseAssets(client *github.Client, release *github.Reposit
 				"name":         assetName,
 				"content-type": asset.GetContentType(),
 				"created-at":   asset.GetCreatedAt(),
-			}).Debug("Found asset")
+			}).Debug("found asset")
 
 			for _, file := range files {
 				match, err := filepath.Match(file, assetName)
@@ -357,4 +351,51 @@ func (p *Plugin) getLatestPrerelease(client *github.Client) (*github.RepositoryR
 	}
 
 	return release, nil
+}
+
+func (p *Plugin) downloadAssetFromURL(url, name, downloadPath string) error {
+	logrus.WithFields(logrus.Fields{
+		"name": name,
+		"url":  url,
+	}).Info("downloading asset")
+
+	resp, err := p.network.Client.Get(url)
+	if err != nil {
+		return fmt.Errorf("error while downloading %s from %s: %w", name, url, err)
+	}
+	rc := resp.Body
+	defer rc.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("request for %s failed, status %s", url, http.StatusText(resp.StatusCode))
+	}
+
+	return writeAsset(rc, name, downloadPath)
+}
+
+func writeAsset(rc io.ReadCloser, name, downloadPath string) error {
+	assetPath := filepath.Join(downloadPath, name)
+	out, err := os.Create(assetPath)
+	if err != nil {
+		return fmt.Errorf("error creating file at %s: %w", assetPath, err)
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, rc)
+	if err != nil {
+		return fmt.Errorf("error while downloading file %s: %w", name, err)
+	}
+
+	fileInfo, err := out.Stat()
+	if err != nil {
+		return fmt.Errorf("error when getting file information for %s: %w", assetPath, err)
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"name":  name,
+		"path":  assetPath,
+		"bytes": fileInfo.Size(),
+	}).Info("wrote asset")
+
+	return nil
 }
