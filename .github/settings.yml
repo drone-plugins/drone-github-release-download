@@ -1,6 +1,6 @@
 repository:
   name: drone-github-release-download
-  description: Drone plugin for downloading Github Releases
+  description: Drone plugin for downloading GitHub Releases
   homepage: http://plugins.drone.io/drone-plugins/drone-github-release-download
   topics: drone, drone-plugin
 
