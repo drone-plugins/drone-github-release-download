@@ -1,4 +1,4 @@
-FROM plugins/base:multiarch@sha256:4e5320eb580ea36282cbcb8f4366edbb6ce7871196097591fd731690e8c4f28e
+FROM plugins/base:multiarch@sha256:478bc3cc78a1cc8827db8e8941b4dcdc3b868a2ab6d7522313f412d3ca213983
 
 LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" \
   org.label-schema.name="Drone GitHub Release Download" \
