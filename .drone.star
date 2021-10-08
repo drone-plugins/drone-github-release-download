@@ -10,7 +10,7 @@ def main(ctx):
     windows(ctx, '1809'),
   ]
 
-  after = manifest(ctx) + gitter(ctx)
+  after = manifest(ctx)
 
   for b in before:
     for s in stages:
@@ -33,11 +33,23 @@ def testing(ctx):
     },
     'steps': [
       {
-        'name': 'staticcheck',
-        'image': 'golang:1.15',
+        'name': 'environment',
+        'image': 'golang:1.17',
         'pull': 'always',
+        'environment': {
+          'CGO_ENABLED': '0',
+        },
         'commands': [
-          'go run honnef.co/go/tools/cmd/staticcheck ./...',
+          'go version',
+          'go env',
+        ],
+      },
+      {
+        'name': 'staticcheck',
+        'image': 'golang:1.17',
+        'commands': [
+          'go install honnef.co/go/tools/cmd/staticcheck@latest',
+          'staticcheck ./...'
         ],
         'volumes': [
           {
@@ -48,10 +60,10 @@ def testing(ctx):
       },
       {
         'name': 'lint',
-        'image': 'golang:1.15',
-        'pull': 'always',
+        'image': 'golang:1.17',
         'commands': [
-          'go run golang.org/x/lint/golint -set_exit_status ./...',
+          'go install golang.org/x/lint/golint@latest',
+          'golint -set_exit_status ./...',
         ],
         'volumes': [
           {
@@ -62,8 +74,7 @@ def testing(ctx):
       },
       {
         'name': 'vet',
-        'image': 'golang:1.15',
-        'pull': 'always',
+        'image': 'golang:1.17',
         'commands': [
           'go vet ./...',
         ],
@@ -76,8 +87,7 @@ def testing(ctx):
       },
       {
         'name': 'test',
-        'image': 'golang:1.15',
-        'pull': 'always',
+        'image': 'golang:1.17',
         'commands': [
           'go test -cover ./...',
         ],
@@ -105,28 +115,6 @@ def testing(ctx):
   }]
 
 def linux(ctx, arch):
-  docker = {
-    'dockerfile': 'docker/Dockerfile.linux.%s' % (arch),
-    'repo': 'plugins/github-release-download',
-    'username': {
-      'from_secret': 'docker_username',
-    },
-    'password': {
-      'from_secret': 'docker_password',
-    },
-  }
-
-  if ctx.build.event == 'pull_request':
-    docker.update({
-      'dry_run': True,
-      'tags': 'linux-%s' % (arch),
-    })
-  else:
-    docker.update({
-      'auto_tag': True,
-      'auto_tag_suffix': 'linux-%s' % (arch),
-    })
-
   if ctx.build.event == 'tag':
     build = [
       'go build -v -ldflags "-X main.version=%s" -a -tags netgo -o release/linux/%s/drone-github-release-download ./cmd/drone-github-release-download' % (ctx.build.ref.replace("refs/tags/v", ""), arch),
@@ -136,6 +124,65 @@ def linux(ctx, arch):
       'go build -v -ldflags "-X main.version=%s" -a -tags netgo -o release/linux/%s/drone-github-release-download ./cmd/drone-github-release-download' % (ctx.build.commit[0:8], arch),
     ]
 
+  steps = [
+    {
+      'name': 'environment',
+      'image': 'golang:1.17',
+      'pull': 'always',
+      'environment': {
+        'CGO_ENABLED': '0',
+      },
+      'commands': [
+        'go version',
+        'go env',
+      ],
+    },
+    {
+      'name': 'build',
+      'image': 'golang:1.17',
+      'environment': {
+        'CGO_ENABLED': '0',
+      },
+      'commands': build,
+    },
+    {
+      'name': 'executable',
+      'image': 'golang:1.17',
+      'commands': [
+        './release/linux/%s/drone-github-release-download --help' % (arch),
+      ],
+    },
+  ]
+
+  # Only add docker step when not a PR due to pull rate limits
+  if ctx.build.event != 'pull_request':
+    steps.append({
+      'name': 'docker',
+      'image': 'plugins/docker',
+      'pull': 'always',
+      'settings': {
+        'dockerfile': 'docker/Dockerfile.linux.%s' % (arch),
+        'repo': 'plugins/github-release-download',
+        'auto_tag': True,
+        'auto_tag_suffix': 'linux-%s' % (arch),
+        'username': {
+          'from_secret': 'docker_username',
+        },
+        'password': {
+          'from_secret': 'docker_password',
+        },
+      }
+    })
+
+  # Only run amd64 build on PR
+  refs = [
+    'refs/heads/master',
+    'refs/tags/**',
+  ]
+
+  if arch == 'amd64':
+    refs.append('refs/pull/**')
+
   return {
     'kind': 'pipeline',
     'type': 'docker',
@@ -144,50 +191,10 @@ def linux(ctx, arch):
       'os': 'linux',
       'arch': arch,
     },
-    'steps': [
-      {
-        'name': 'environment',
-        'image': 'golang:1.15',
-        'pull': 'always',
-        'environment': {
-          'CGO_ENABLED': '0',
-        },
-        'commands': [
-          'go version',
-          'go env',
-        ],
-      },
-      {
-        'name': 'build',
-        'image': 'golang:1.15',
-        'pull': 'always',
-        'environment': {
-          'CGO_ENABLED': '0',
-        },
-        'commands': build,
-      },
-      {
-        'name': 'executable',
-        'image': 'golang:1.15',
-        'pull': 'always',
-        'commands': [
-          './release/linux/%s/drone-github-release-download --help' % (arch),
-        ],
-      },
-      {
-        'name': 'docker',
-        'image': 'plugins/docker',
-        'pull': 'always',
-        'settings': docker,
-      },
-    ],
+    'steps': steps,
     'depends_on': [],
     'trigger': {
-      'ref': [
-        'refs/heads/master',
-        'refs/tags/**',
-        'refs/pull/**',
-      ],
+      'ref': refs,
     },
   }
 
@@ -319,40 +326,6 @@ def manifest(ctx):
       'ref': [
         'refs/heads/master',
         'refs/tags/**',
-      ],
-    },
-  }]
-
-def gitter(ctx):
-  return [{
-    'kind': 'pipeline',
-    'type': 'docker',
-    'name': 'gitter',
-    'clone': {
-      'disable': True,
-    },
-    'steps': [
-      {
-        'name': 'gitter',
-        'image': 'plugins/gitter',
-        'pull': 'always',
-        'settings': {
-          'webhook': {
-            'from_secret': 'gitter_webhook',
-          }
-        },
-      },
-    ],
-    'depends_on': [
-      'manifest',
-    ],
-    'trigger': {
-      'ref': [
-        'refs/heads/master',
-        'refs/tags/**',
-      ],
-      'status': [
-        'failure',
       ],
     },
   }]
