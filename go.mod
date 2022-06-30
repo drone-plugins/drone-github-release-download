@@ -8,5 +8,5 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/urfave/cli/v2 v2.10.3
-	golang.org/x/oauth2 v0.0.0-20220628200809-02e64fa58f26
+	golang.org/x/oauth2 v0.0.0-20220630143837-2104d58473e0
 )
