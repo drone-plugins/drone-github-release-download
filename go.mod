@@ -7,7 +7,7 @@ require (
 	github.com/google/go-github/v35 v35.3.0
 	github.com/joho/godotenv v1.4.0
 	github.com/sirupsen/logrus v1.9.0
-	github.com/urfave/cli/v2 v2.11.1
+	github.com/urfave/cli/v2 v2.11.2
 	golang.org/x/oauth2 v0.0.0-20220808172628-8227340efae7
 )
 
