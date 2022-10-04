@@ -1,0 +1,366 @@
+---
+kind: pipeline
+type: vm
+name: testing
+
+pool:
+  use: ubuntu
+
+steps:
+- name: test
+  image: golang:1.19
+  commands:
+  - go test -cover ./...
+  volumes:
+  - name: gopath
+    path: "/go"
+volumes:
+- name: gopath
+  temp: {}
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/tags/**
+  - refs/pull/**
+
+---
+kind: pipeline
+type: vm
+name: linux-amd64
+
+pool:
+  use: ubuntu
+
+steps:
+- name: environment
+  image: golang:1.19
+  pull: always
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go version
+  - go env
+
+- name: build
+  image: golang:1.19
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/linux/amd64/drone-github-release-download ./cmd/drone-github-release-download
+  when:
+    event:
+      exclude:
+      - tag
+
+- name: build-tag
+  image: golang:1.19
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/linux/amd64/drone-github-release-download ./cmd/drone-github-release-download
+  when:
+    event:
+    - tag
+
+- name: executable
+  image: golang:1.19
+  commands:
+  - ./release/linux/amd64/drone-github-release-download --help
+
+- name: docker-dryrun
+  image: plugins/docker
+  settings:
+    dockerfile: docker/Dockerfile.linux.amd64
+    dry_run: true
+    repo: plugins/github-release-download
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+  when:
+    event:
+    - pull_request
+
+- name: docker
+  image: plugins/docker
+  settings:
+    auto_tag: true
+    auto_tag_suffix: linux-amd64
+    dockerfile: docker/Dockerfile.linux.amd64
+    repo: plugins/github-release-download
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+  when:
+    event:
+      exclude:
+      - pull_request
+
+depends_on:
+- testing
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/tags/**
+  - refs/pull/**
+
+---
+kind: pipeline
+type: vm
+name: linux-arm64
+
+pool:
+  use: ubuntu_arm64
+
+steps:
+- name: environment
+  image: golang:1.19
+  pull: always
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go version
+  - go env
+
+- name: build
+  image: golang:1.19
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/linux/arm64/drone-github-release-download ./cmd/drone-github-release-download
+  when:
+    event:
+      exclude:
+      - tag
+
+- name: build-tag
+  image: golang:1.19
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/linux/arm64/drone-github-release-download ./cmd/drone-github-release-download
+  when:
+    event:
+    - tag
+  
+- name: executable
+  image: golang:1.19
+  commands:
+  - ./release/linux/arm64/drone-github-release-download --help
+
+- name: docker-dryrun
+  image: plugins/docker
+  settings:
+    auto_tag: true
+    auto_tag_suffix: linux-arm64
+    dockerfile: docker/Dockerfile.linux.arm64
+    repo: plugins/github-release-download
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+  when:
+    event:
+    - pull_request
+
+- name: docker
+  image: plugins/docker
+  settings:
+    auto_tag: true
+    auto_tag_suffix: linux-arm64
+    dockerfile: docker/Dockerfile.linux.arm64
+    repo: plugins/github-release-download
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+  when:
+    event:
+      exclude:
+      - pull_request
+
+depends_on:
+- testing
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/tags/**
+  - refs/pull/**
+
+---
+kind: pipeline
+type: vm
+name: windows-1809
+
+pool:
+  use: windows
+
+steps:
+- name: environment
+  image: golang:1.19
+  pull: always
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go version
+  - go env
+
+- name: build
+  image: golang:1.19
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go build -v -ldflags "-X main.version=$env:DRONE_COMMIT_SHA.Substring(8)" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe ./cmd/drone-github-release-download
+  when:
+    event:
+      exclude:
+      - tag
+
+- name: build-tag
+  image: golang:1.19
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go build -v -ldflags "-X main.version=$env:DRONE_SEMVER_SHORT" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe ./cmd/drone-github-release-download
+  when:
+    event:
+    - tag
+
+- name: executable
+  image: golang:1.19
+  commands:
+  - ./release/windows/amd64/drone-github-release-download.exe --help
+
+- name: docker
+  image: plugins/docker
+  settings:
+    auto_tag: true
+    auto_tag_suffix: windows-1809-amd64
+    dockerfile: docker/Dockerfile.windows.1809
+    repo: plugins/github-release-download
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+    # Windows specific
+    daemon_off: true
+    purge: false
+  when:
+    event:
+      exclude:
+      - pull_request
+
+depends_on:
+- testing
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/tags/**
+  - refs/pull/**
+
+---
+kind: pipeline
+type: vm
+name: windows-ltsc2022
+
+pool:
+  use: windows-2022
+
+steps:
+- name: environment
+  image: golang:1.19
+  pull: always
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go version
+  - go env
+
+- name: build
+  image: golang:1.19
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go build -v -ldflags "-X main.version=$env:DRONE_COMMIT_SHA.Substring(8)" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe ./cmd/drone-github-release-download
+  when:
+    event:
+      exclude:
+      - tag
+
+- name: build-tag
+  image: golang:1.19
+  environment:
+    CGO_ENABLED: '0'
+  commands:
+  - go build -v -ldflags "-X main.version=$env:DRONE_SEMVER_SHORT" -a -tags netgo -o release/windows/amd64/drone-github-release-download.exe ./cmd/drone-github-release-download
+  when:
+    event:
+    - tag
+
+- name: executable
+  image: golang:1.19
+  commands:
+  - ./release/windows/amd64/drone-github-release-download.exe --help
+
+- name: docker
+  image: plugins/docker
+  settings:
+    auto_tag: true
+    auto_tag_suffix: windows-ltsc2022-amd64
+    dockerfile: docker/Dockerfile.windows.ltsc2022
+    repo: plugins/github-release-download
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+    # Windows specific
+    daemon_off: true
+    purge: false
+  when:
+    event:
+      exclude:
+      - pull_request
+
+depends_on:
+- testing
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/tags/**
+  - refs/pull/**
+
+---
+kind: pipeline
+type: vm
+name: manifest
+
+platform:
+  os: linux
+  arch: amd64
+
+pool:
+  use: ubuntu
+
+steps:
+- name: manifest
+  image: plugins/manifest
+  settings:
+    auto_tag: true
+    ignore_missing: true
+    password:
+      from_secret: docker_password
+    spec: docker/manifest.tmpl
+    username:
+      from_secret: docker_username
+
+trigger:
+  ref:
+  - refs/heads/master
+  - refs/tags/**
+
+depends_on:
+- linux-amd64
+- linux-arm64
+- windows-1809
+- windows-ltsc2022
