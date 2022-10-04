@@ -307,8 +307,8 @@ steps:
   image: plugins/docker
   settings:
     auto_tag: true
-    auto_tag_suffix: windows-1809-amd64
-    dockerfile: docker/Dockerfile.windows.1809
+    auto_tag_suffix: windows-ltsc2022-amd64
+    dockerfile: docker/Dockerfile.windows.ltsc2022
     repo: plugins/github-release-download
     username:
       from_secret: docker_username
