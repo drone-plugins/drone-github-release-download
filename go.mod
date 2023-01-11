@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/drone-plugins/drone-plugin-lib v0.4.0
 	github.com/google/go-github/v47 v47.1.0
+	github.com/google/go-github/v49 v49.1.0
 	github.com/joho/godotenv v1.4.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/urfave/cli/v2 v2.23.6
