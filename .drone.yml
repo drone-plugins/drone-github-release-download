@@ -8,7 +8,7 @@ pool:
 
 steps:
 - name: test
-  image: golang:1.19
+  image: golang:1.20
   commands:
   - go test -cover ./...
   volumes:
@@ -33,7 +33,7 @@ pool:
 
 steps:
 - name: environment
-  image: golang:1.19
+  image: golang:1.20
   pull: always
   environment:
     CGO_ENABLED: '0'
@@ -42,7 +42,7 @@ steps:
   - go env
 
 - name: build
-  image: golang:1.19
+  image: golang:1.20
   environment:
     CGO_ENABLED: '0'
   commands:
@@ -53,7 +53,7 @@ steps:
       - tag
 
 - name: build-tag
-  image: golang:1.19
+  image: golang:1.20
   environment:
     CGO_ENABLED: '0'
   commands:
@@ -63,7 +63,7 @@ steps:
     - tag
 
 - name: executable
-  image: golang:1.19
+  image: golang:1.20
   commands:
   - ./release/linux/amd64/drone-github-release-download --help
 
@@ -115,7 +115,7 @@ pool:
 
 steps:
 - name: environment
-  image: golang:1.19
+  image: golang:1.20
   pull: always
   environment:
     CGO_ENABLED: '0'
@@ -124,7 +124,7 @@ steps:
   - go env
 
 - name: build
-  image: golang:1.19
+  image: golang:1.20
   environment:
     CGO_ENABLED: '0'
   commands:
@@ -135,7 +135,7 @@ steps:
       - tag
 
 - name: build-tag
-  image: golang:1.19
+  image: golang:1.20
   environment:
     CGO_ENABLED: '0'
   commands:
@@ -145,7 +145,7 @@ steps:
     - tag
   
 - name: executable
-  image: golang:1.19
+  image: golang:1.20
   commands:
   - ./release/linux/arm64/drone-github-release-download --help
 
@@ -198,7 +198,7 @@ pool:
 
 steps:
 - name: environment
-  image: golang:1.19
+  image: golang:1.20
   pull: always
   environment:
     CGO_ENABLED: '0'
@@ -207,7 +207,7 @@ steps:
   - go env
 
 - name: build
-  image: golang:1.19
+  image: golang:1.20
   environment:
     CGO_ENABLED: '0'
   commands:
@@ -220,7 +220,7 @@ steps:
       - tag
 
 - name: build-tag
-  image: golang:1.19
+  image: golang:1.20
   environment:
     CGO_ENABLED: '0'
   commands:
@@ -230,7 +230,7 @@ steps:
     - tag
 
 - name: executable
-  image: golang:1.19
+  image: golang:1.20
   commands:
   - ./release/windows/amd64/drone-github-release-download.exe --help
 
@@ -271,7 +271,7 @@ pool:
 
 steps:
 - name: environment
-  image: golang:1.19
+  image: golang:1.20
   pull: always
   environment:
     CGO_ENABLED: '0'
@@ -280,7 +280,7 @@ steps:
   - go env
 
 - name: build
-  image: golang:1.19
+  image: golang:1.20
   environment:
     CGO_ENABLED: '0'
   commands:
@@ -293,7 +293,7 @@ steps:
       - tag
 
 - name: build-tag
-  image: golang:1.19
+  image: golang:1.20
   environment:
     CGO_ENABLED: '0'
   commands:
@@ -303,7 +303,7 @@ steps:
     - tag
 
 - name: executable
-  image: golang:1.19
+  image: golang:1.20
   commands:
   - ./release/windows/amd64/drone-github-release-download.exe --help
 
