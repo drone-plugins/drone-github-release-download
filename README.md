@@ -13,7 +13,7 @@ Drone plugin for downloading Github Releases.
 
 Build the binary with the following command:
 
-```console
+```bash
 export GOOS=linux
 export GOARCH=amd64
 export CGO_ENABLED=0
@@ -26,7 +26,7 @@ go build -v -a -tags netgo -o release/linux/amd64/drone-github-release-download 
 
 Build the Docker image with the following command:
 
-```console
+```bash
 docker build \
   --label org.label-schema.build-date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
   --label org.label-schema.vcs-ref=$(git rev-parse --short HEAD) \
@@ -35,7 +35,7 @@ docker build \
 
 ## Usage
 
-```console
+```bash
 docker run --rm \
   -e PLUGIN_API_KEY=${HOME}/.ssh/id_rsa \
   -e PLUGIN_OWNER=octocat \
