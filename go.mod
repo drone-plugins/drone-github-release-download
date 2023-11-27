@@ -3,7 +3,7 @@ module github.com/drone-plugins/drone-github-release-download
 go 1.21
 
 require (
-	github.com/drone-plugins/drone-plugin-lib v0.4.1
+	github.com/drone-plugins/drone-plugin-lib v0.4.2
 	github.com/google/go-github/v55 v55.0.0
 	github.com/joho/godotenv v1.5.1
 	github.com/sirupsen/logrus v1.9.3
