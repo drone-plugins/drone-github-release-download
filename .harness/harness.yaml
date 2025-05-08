@@ -38,6 +38,28 @@ pipeline:
                     image: golang:1.21
                     shell: Sh
                     command: go test -cover ./...
+              - step:
+                  name: Build and test binaries
+                  identifier: Build_test_binaries
+                  type: Run
+                  spec:
+                    connectorRef: Plugins_Docker_Hub_Connector
+                    image: golang:1.21
+                    shell: Sh
+                    command: |-
+                      # force go modules
+                      export GOPATH=""
+
+                      # disable cgo
+                      export CGO_ENABLED=0
+
+                      set -e
+                      set -x
+
+                      # linux
+                      export GOOS=linux GOARCH=amd64
+                      go build -v -a -tags netgo -o release/linux/amd64/drone-github-release-download ./cmd/drone-github-release-download
+                      ./release/linux/amd64/drone-github-release-download --help
         description: ""
     - parallel:
         - stage:
