@@ -1,6 +1,6 @@
 module github.com/drone-plugins/drone-github-release-download
 
-go 1.21
+go 1.25.0
 
 require (
 	github.com/drone-plugins/drone-plugin-lib v0.4.2
@@ -8,7 +8,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/urfave/cli/v2 v2.27.1
-	golang.org/x/oauth2 v0.19.0
+	golang.org/x/oauth2 v0.36.0
 )
 
 require (
